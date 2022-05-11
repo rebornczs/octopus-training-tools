@@ -12,7 +12,7 @@ setup(
     description="src algorithm utils",
     author="reborn",
     packages=["octopus_utils"],
-    package_data={"octopus_utils": ["resources/icon.png", "resources/song.ttf"]}
+    package_data={"octopus_utils": ["resources/icon.png", "resources/song.ttf"]},
     include_package_data=True,
     install_requires=reqs
 )
