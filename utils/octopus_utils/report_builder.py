@@ -27,11 +27,15 @@ class ReportBuilder(object):
     title: str = field(default="评估报告")
     index: int = field(default=0)
     dir: str = field(default="/tmp/res")
-    elements: List = field(default=[])
-    trash: List = field(default=[])
+    elements: List = field(default_factory=list)
+    trash: List = field(default_factory=list)
 
     def __post_init__(self):
         os.makedirs(self.dir, exist_ok=True)
+        if self.name.endswith(".pdf"):
+            self.name = os.path.join(self.dir, self.name)
+        else:
+            self.name = os.path.join(self.dir, self.name + ".pdf")
 
         self.__add_cover()
 
@@ -52,8 +56,7 @@ class ReportBuilder(object):
         style.fontName = "SONG"
         style.alignment = alignment
         style.fontSize = size
-        style.alignment = 1
-        return Paragraph(text=text, style=style)
+        return Paragraph(text=str(text), style=style)
 
     @staticmethod
     def __line(width=1, color="black"):
@@ -127,6 +130,7 @@ class ReportBuilder(object):
         data.append([self.paragraph(text="报告创建时间"),
                      self.paragraph(text=str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))])
         self.elements.append(Table(data=data, colWidths=(4 * cm, 14 * cm)))
+        self.elements.append(self.__spacer(1, 0.4))
 
         # 添加评估报告主体
         self.elements.append(self.paragraph(size=12, alignment=1, text="第二节：评估结果"))
@@ -134,12 +138,19 @@ class ReportBuilder(object):
         self.elements.append(self.__line())
         self.elements.append(self.__spacer(1, 0.2))
 
+    def add_paragraph(self, data):
+        self.elements.append(self.paragraph(text=data))
+
     def add_table(self, data):
         # 添加表格名称
         self.elements.append(self.paragraph(alignment=1, text=data["name"]))
         self.elements.append(self.__spacer())
 
         # 添加表格主体
+        for i in range(len(data["body"])):
+            for j in range(len(data["body"][i])):
+                data["body"][i][j] = self.paragraph(text=data["body"][i][j], alignment=1)
+
         self.elements.append(self.__table(data["body"]))
         self.elements.append(self.__spacer(1, 0.2))
 
@@ -220,7 +231,7 @@ class ReportBuilder(object):
         self.build()
 
     def build(self):
-        doc = BaseDocTemplate(self.dir, pagesize=A4)
+        doc = BaseDocTemplate(self.name, pagesize=A4)
         frame = Frame(43, doc.bottomMargin + 0.6 * cm, 509, doc.height, id="normal")
         template = PageTemplate(id="test", frames=frame, onPage=self.__header, onPageEnd=self.__footer)
         doc.addPageTemplates([template])
